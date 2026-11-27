@@ -465,7 +465,6 @@ class SurveySimulation(object):
             self.koTimes_mjd = self.koTimes.mjd
             self.koMaps = {}
             for x, n in zip(systOrder, systNames[systOrder]):
-                print(n)
                 self.koMaps[n] = koMaps[x, :, :]
 
         self._outspec["nofZ"] = nofZ
@@ -715,9 +714,16 @@ class SurveySimulation(object):
 
                 # populate the DRM with observation modes
                 DRM["det_mode"] = dict(det_mode)
-                del DRM["det_mode"]["inst"], DRM["det_mode"]["syst"]
                 DRM["char_mode"] = dict(char_mode)
-                del DRM["char_mode"]["inst"], DRM["char_mode"]["syst"]
+                for mode_key in ("det_mode", "char_mode"):
+                    for key in (
+                        "inst",
+                        "syst",
+                        "band_wavelengths",
+                        "bandpass_wl",
+                        "wl_bins",
+                    ):
+                        DRM[mode_key].pop(key, None)
                 DRM["exoplanetObsTime"] = TK.exoplanetObsTime.copy()
 
                 # append result values to self.DRM
@@ -2346,6 +2352,43 @@ class SurveySimulation(object):
 
         return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
+    def calc_spectral_params(self, mode, pInds, wl_dependency=None):
+        """Calculate spectral delta magnitudes and angles for selected planets.
+
+        Args:
+            mode (dict):
+                Selected observing mode.
+            pInds (int or numpy.ndarray(int)):
+                Global indices of the planets to calculate.
+            wl_dependency (int, optional):
+                Wavelength-bin index. If omitted, use the full observing bandpass.
+
+        Returns:
+            tuple:
+                dMag (numpy.ndarray):
+                    Differences in magnitude between planets and their host star.
+                WA (astropy.units.Quantity):
+                    Working angles of the planets in units of arcsec.
+        """
+        SU = self.SimulatedUniverse
+        TL = self.TargetList
+        PPop = self.PlanetPopulation
+
+        pInds = np.array(pInds, dtype=int, ndmin=1)
+        a = SU.a[pInds]
+        beta = SU.beta[pInds]
+        d = SU.d[pInds]
+        WA = SU.WA[pInds]
+        if SU.lucky_planets:
+            beta = np.full(pInds.shape, 90.0) * u.deg
+            d = a
+            WA = np.arctan(a / TL.dist[SU.plan2star[pInds]]).to("arcsec")
+
+        albedos = PPop.get_p_from_phi_a(mode, beta, a, wl_dependency=wl_dependency)
+        # Phase is already included in the table albedos.
+        dMag = deltaMag(albedos, SU.Rp[pInds], d, 1)
+        return dMag, WA
+
     def calc_signal_noise(
         self, sInd, pInds, t_int, mode, fZ=None, JEZ=None, dMag=None, WA=None
     ):
@@ -2367,9 +2410,16 @@ class SurveySimulation(object):
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
-                Differences in magnitude between planets and their host star
+                Differences in magnitude between planets and their host star.
+                In spectroscopic modes, spectral table magnitudes take precedence
+                when use_spectrum is enabled, including the quadrature geometry
+                for lucky planets. Without spectral tables, lucky planets in
+                spectroscopic modes also override this input. Other cases use
+                this input when provided.
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Working angles of the planets of interest in units of arcsec
+                Working angles of the planets of interest in units of arcsec.
+                Lucky planets in spectroscopic modes use the model's working
+                angles instead of this input.
 
         Returns:
             tuple:
@@ -2386,6 +2436,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        PPop = self.PlanetPopulation
 
         # calculate optional parameters if not provided
         fZ = (
@@ -2405,25 +2456,34 @@ class SurveySimulation(object):
             else SU.scale_JEZ(sInd, mode, pInds=pInds)
         )
 
-        # if lucky_planets, use lucky planet params for dMag and WA
-        if SU.lucky_planets and mode in list(
+        if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):
-            phi = (1 / np.pi) * np.ones(len(SU.d))
-            dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]  # delta magnitude
-            # working angle
-            WA = (
-                np.arctan(
-                    SU.a.to_value(u.AU)
-                    * self.AU2pc
-                    / TL.dist[SU.plan2star].to_value(u.pc)
-                )
-                * self.rad2arcsec
-                << u.arcsec
-            )[pInds]
+            dMag, spectrum_WA = self.calc_spectral_params(mode, pInds)
+            if SU.lucky_planets:
+                WA = spectrum_WA
+            else:
+                WA = WA if (WA is not None) else spectrum_WA
+        # if lucky_planets, use lucky planet params for dMag and WA
         else:
-            dMag = dMag if (dMag is not None) else SU.dMag[pInds]
-            WA = WA if (WA is not None) else SU.WA[pInds]
+            if SU.lucky_planets and mode in list(
+                filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
+            ):
+                phi = (1 / np.pi) * np.ones(len(SU.d))
+                dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]  # delta magnitude
+                # working angle
+                WA = (
+                    np.arctan(
+                        SU.a.to_value(u.AU)
+                        * self.AU2pc
+                        / TL.dist[SU.plan2star].to_value(u.pc)
+                    )
+                    * self.rad2arcsec
+                    << u.arcsec
+                )[pInds]
+            else:
+                dMag = dMag if (dMag is not None) else SU.dMag[pInds]
+                WA = WA if (WA is not None) else SU.WA[pInds]
 
         # initialize Signal and Noise arrays
         Signal = np.zeros(len(pInds))
@@ -2850,7 +2910,16 @@ class SurveySimulation(object):
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
 
-    def find_char_SNR(self, sInd, pIndsChar, startTime, intTime, mode):
+    def find_char_SNR(
+        self,
+        sInd,
+        pIndsChar,
+        startTime,
+        intTime,
+        mode,
+        return_JEZ=False,
+        return_spectral_params=False,
+    ):
         """Finds the SNR achieved by an observing mode after intTime days
 
         The observation window (which includes settling and overhead times)
@@ -2872,7 +2941,13 @@ class SurveySimulation(object):
                 Selected star characterization integration time in units of day.
             mode (dict):
                 Observing mode for the characterization
-
+            return_JEZ (bool):
+                If True, also return JEZ. Defaults to False.
+            return_spectral_params (bool):
+                If True, also return wavelength-binned dMag and WA for the real
+                planets in pIndsChar order. Defaults to False. dMag is derived
+                from mean flux ratios over the SNR time samples and WA is
+                averaged over those samples.
         Returns:
             tuple:
                 SNR (float numpy.ndarray):
@@ -2883,6 +2958,17 @@ class SurveySimulation(object):
                 systemParams (dict):
                     Dictionary of time-dependent planet properties averaged over the
                     duration of the integration.
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2.
+                    One value per observed real planet, or a one-element stellar
+                    fallback array for a FA observation.
+                    Returned only when return_JEZ is True.
+                spectral_dMag (numpy.ndarray):
+                    Flux-averaged magnitudes, shaped (nRealPlanets, nBins).
+                    Returned only when return_spectral_params is True.
+                spectral_WA (astropy.units.Quantity):
+                    Mean working angles in arcsec for the same real planets.
+                    Returned only when return_spectral_params is True.
 
         """
 
@@ -2900,9 +2986,14 @@ class SurveySimulation(object):
         # first, calculate SNR for observable planets (without false alarm)
         planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
         SNRplans = np.zeros(len(planinds))
+        if return_spectral_params:
+            n_bins = len(mode["bandpass_wl"])
+            spectral_fluxes = np.zeros((self.ntFlux, len(planinds), n_bins))
+            spectral_WAs = np.zeros((self.ntFlux, len(planinds))) * u.arcsec
         if len(planinds) > 0:
             # initialize arrays for SNR integration
             fZs = np.zeros(self.ntFlux) << self.fZ_unit
+            JEZs = np.zeros((self.ntFlux, len(planinds))) << self.JEZ_unit
             systemParamss = np.empty(self.ntFlux, dtype="object")
             Ss = np.zeros((self.ntFlux, len(planinds)))
             Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -2914,6 +3005,10 @@ class SurveySimulation(object):
             for i in range(self.ntFlux):
                 # calculate signal and noise (electron count rates)
                 if SU.lucky_planets:
+                    if return_spectral_params:
+                        lucky_dMag = deltaMag(
+                            SU.p[planinds], SU.Rp[planinds], SU.d[planinds], 1 / np.pi
+                        )
                     fZs[i] = ZL.fZ(
                         Obs,
                         TL,
@@ -2921,8 +3016,9 @@ class SurveySimulation(object):
                         currentTimeAbs.reshape(1),
                         mode,
                     )[0]
+                    JEZs[i] = SU.scale_JEZ(sInd, mode, pInds=planinds)
                     Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                        sInd, planinds, dt, mode, fZ=fZs[i]
+                        sInd, planinds, dt, mode, fZ=fZs[i], JEZ=JEZs[i]
                     )
                 # allocate first half of dt
                 timePlus += dt / 2.0
@@ -2943,14 +3039,37 @@ class SurveySimulation(object):
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
                 if not SU.lucky_planets:
+                    JEZs[i] = SU.scale_JEZ(sInd, mode, pInds=planinds)
                     Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                        sInd, planinds, dt, mode, fZ=fZs[i]
+                        sInd, planinds, dt, mode, fZ=fZs[i], JEZ=JEZs[i]
                     )
+                if return_spectral_params:
+                    # Use every observed real planet, not the planning assumptions.
+                    if getattr(self.PlanetPopulation, "use_spectrum", False):
+                        for j in range(n_bins):
+                            bin_dMag, bin_WA = self.calc_spectral_params(
+                                mode, planinds, wl_dependency=j
+                            )
+                            spectral_fluxes[i, :, j] = 10 ** (-0.4 * bin_dMag)
+                        spectral_WAs[i] = bin_WA
+                    else:
+                        sample_dMag = (
+                            lucky_dMag if SU.lucky_planets else SU.dMag[planinds]
+                        )
+                        spectral_fluxes[i] = 10 ** (-0.4 * sample_dMag[:, np.newaxis])
+                        spectral_WAs[i] = (
+                            np.arctan(
+                                SU.a[planinds] / TL.dist[SU.plan2star[planinds]]
+                            ).to(u.arcsec)
+                            if SU.lucky_planets
+                            else SU.WA[planinds]
+                        )
                 # allocate second half of dt
                 timePlus += dt / 2.0
 
             # average output parameters
             fZ = np.mean(fZs)
+            JEZ = np.mean(JEZs, axis=0)
             systemParams = {
                 key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                 / float(self.ntFlux)
@@ -2973,6 +3092,8 @@ class SurveySimulation(object):
                 (currentTimeAbs.copy() + totTime / 2.0).reshape(1),
                 mode,
             )[0]
+            JEZ = u.Quantity(TL.JEZ0[mode["hex"]][sInd], ndmin=1)
+            systemParams = SU.dump_system_params(sInd)
 
         # calculate the false alarm SNR (if any)
         SNRfa = []
@@ -3003,8 +3124,14 @@ class SurveySimulation(object):
         SNR = np.zeros(len(pInds_FA))
         # plug in the SNR's we computed (pIndsChar and optional FA)
         SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
-
-        return SNR, fZ, systemParams
+        result = (SNR, fZ, systemParams)
+        if return_JEZ:
+            result += (JEZ,)
+        if return_spectral_params:
+            with np.errstate(divide="ignore"):
+                spectral_dMag = -2.5 * np.log10(np.mean(spectral_fluxes, axis=0))
+            result += (spectral_dMag, np.mean(spectral_WAs, axis=0))
+        return result
 
     def revisit_inds(self, sInds, tmpCurrentTimeNorm):
         """Return subset of star indices that are scheduled for revisit.
